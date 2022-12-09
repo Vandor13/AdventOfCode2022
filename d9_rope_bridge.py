@@ -21,9 +21,9 @@ MOVEMENTS = {
 class RopeBridge(AoCGui):
     def __init__(self):
         super().__init__()
-        self.positions = set()
-        self.tail_position = (0, 0)
-        self.head_distance = (0, 0)
+        self.visited_positions = set()
+        self.number_of_knots = 1
+        self.knot_positions = []
         self.prepare_gui("Day 9: Rope Bridge", "Calculate positions", EXAMPLE_DATA)
 
     def button_pressed(self):
@@ -35,29 +35,42 @@ class RopeBridge(AoCGui):
             self.part_two()
 
     def part_one(self):
-        self.positions.add(self.tail_position)
-        for move in self.data_lines:
-            direction, steps = move.split(" ")
-            self.move_head(direction, int(steps))
-        self.write_result(f"Number of unique positions: {len(self.positions)}")
+        self.execute_moves()
+        self.write_result(f"Number of unique positions: {len(self.visited_positions)}")
 
     def part_two(self):
-        pass
+        self.number_of_knots = 9
+        self.execute_moves()
+        self.write_result(f"Number of unique positions: {len(self.visited_positions)}")
 
-    def move_head(self, direction: str, steps: int):
+    def execute_moves(self):
+        self.visited_positions.clear()
+        self.visited_positions.add((0, 0))
+        for _ in range(self.number_of_knots + 1):
+            self.knot_positions.append((0, 0))
+        for move in self.data_lines:
+            direction, steps = move.split(" ")
+            self.move_knots(direction, int(steps))
+
+    def move_knots(self, direction: str, steps: int):
         step_value = MOVEMENTS[direction]
         for _ in range(steps):
-            self.head_distance = (self.head_distance[0] + step_value[0], self.head_distance[1] + step_value[1])
-            self.move_tail()
-            print(f"Tail: {self.tail_position}, Head: {self.head_distance}")
+            self.knot_positions[0] = (self.knot_positions[0][0] + step_value[0], self.knot_positions[0][1] + step_value[1])
+            for i in range(1, self.number_of_knots + 1):
+                self.update_knot_positions(i)
+                # print(f"Tail: {self.tail_position}, Head: {self.head_distance}")
+            self.visited_positions.add(self.knot_positions[self.number_of_knots])
 
-    def move_tail(self):
-        if abs(self.head_distance[0]) > 1 or abs(self.head_distance[1]) > 1:
-            necessary_move = (divide_by_2(self.head_distance[0]), divide_by_2(self.head_distance[1]))
-            # print(f"Due to distance {self.head_distance} making move: {necessary_move}")
-            self.tail_position = (self.tail_position[0] + necessary_move[0], self.tail_position[1] + necessary_move[1])
-            self.head_distance = (self.head_distance[0] - necessary_move[0], self.head_distance[1] - necessary_move[1])
-            self.positions.add(self.tail_position)
+    def update_knot_positions(self, knot_number):
+        distance = (
+            self.knot_positions[knot_number - 1][0] - self.knot_positions[knot_number][0],
+            self.knot_positions[knot_number - 1][1] - self.knot_positions[knot_number][1],
+        )
+        if abs(distance[0]) > 1 or abs(distance[1]) > 1:
+            necessary_move = (divide_by_2(distance[0]), divide_by_2(distance[1]))
+            # print(f"Due to distance {distance} making move: {necessary_move}")
+            self.knot_positions[knot_number] = (self.knot_positions[knot_number][0] + necessary_move[0],
+                                                self.knot_positions[knot_number][1] + necessary_move[1])
 
 
 def divide_by_2(value: int) -> int:
